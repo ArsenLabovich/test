@@ -1,0 +1,17 @@
+name: Test self-hosted runners
+  on: workflow_dispatch
+  jobs:
+    test-small:
+      runs-on: [self-hosted, small]
+      strategy:
+        matrix: { n: [1, 2] }
+      steps:
+        - run: echo "small runner #${{ matrix.n }} on $(hostname)" && sleep 15
+    test-medium:
+      runs-on: [self-hosted, medium]
+      steps:
+        - run: echo "medium runner on $(hostname)" && sleep 15
+    test-large:
+      runs-on: [self-hosted, large]
+      steps:
+        - run: echo "large runner on $(hostname)" && sleep 15
