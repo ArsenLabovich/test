@@ -1,0 +1,36 @@
+name: Stress test runners
+
+on:
+  workflow_dispatch:
+
+jobs:
+  concurrency-small:
+    runs-on: [self-hosted, small]
+    strategy:
+      matrix:
+        n: [1, 2, 3, 4, 5, 6]
+      max-parallel: 6
+    steps:
+      - name: Burn CPU briefly (queueing test)
+        run: |
+          echo "burst ${{ matrix.n }} started on $(hostname)"
+          timeout 20 sh -c 'while true; do :; done' || true
+          echo "burst ${{ matrix.n }} done"
+
+  cpu-limit-large:
+    runs-on: [self-hosted, large]
+    steps:
+      - name: Burn 4 CPU-bound loops for 30s (container limit is 2 vCPU)
+        run: |
+          for i in 1 2 3 4; do
+            ( timeout 30 sh -c 'while true; do :; done' ) &
+          done
+          wait
+          echo "done - check docker stats on host, should have capped near 2 CPU"
+
+  memory-limit-small:
+    runs-on: [self-hosted, small]
+    continue-on-error: true
+    steps:
+      - name: Try to allocate 2GB in a 1GB-limited container (expect OOM kill)
+        run: dd if=/dev/zero of=/dev/shm/bigfile bs=1M count=2048
